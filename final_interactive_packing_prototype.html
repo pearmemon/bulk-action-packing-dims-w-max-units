@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Packing Dimensions Prototype</title>
+  <style>
+    * { margin: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: #f8f8f8;
+      padding: 20px;
+      color: #333;
+    }
+    
+    .page-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    /* Approach Tabs */
+    .approach-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .approach-tab {
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: #999;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+    
+    .approach-tab:hover {
+      color: #436b93;
+    }
+    
+    .approach-tab.active {
+      color: #436b93;
+      border-bottom-color: #436b93;
+    }
+    
+    .approach-content {
+      display: none;
+    }
+    
+    .approach-content.active {
+      display: block;
+    }
+    
+    /* Container */
+    .container {
+      max-width: 550px;
+      margin: 0 auto;
+    }
+    
+    /* Modal */
+    .modal {
+      background: white;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .modal-header {
+      padding: 24px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .modal-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      background: #436b93;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+    }
+    
+    .modal-title {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #222;
+      letter-spacing: 0.3px;
+    }
+    
+    .modal-title::after {
+      content: "";
+      display: block;
+      width: 50px;
+      height: 2px;
+      background: #436b93;
+      margin: 8px auto 0;
+    }
+    
+    .modal-subtitle {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+    
+    .modal-body {
+      padding: 24px 24px 0px 24px;
+    }
+    
+    .step-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: #999;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    
+    .step-question {
+      font-size: 14px;
+      font-weight: 600;
+      color: #222;
+      margin-bottom: 12px;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    
+    .radio-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #436b93;
+    }
+    
+    .radio-option label {
+      cursor: pointer;
+      font-size: 14px;
+      color: #333;
+    }
+    
+    /* Step 2 */
+    .step-2-content {
+      margin-top: 24px;
+    }
+    
+    .step-2-helper {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    
+    .step-2-helper a {
+      color: #436b93;
+      text-decoration: none;
+      border-bottom: 1px dotted #436b93;
+      cursor: pointer;
+    }
+    
+    .step-2-helper a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Package Section */
+    .package-section {
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 24px;
+      margin-bottom: 12px;
+    }
+    
+    .package-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: #222;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    
+    /* Force the row to be a flexible grid that never exceeds 100% width */
+    .dimensions-row {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      margin-bottom: 20px;
+    }
+    
+    /* Allow the individual dimension blocks to shrink */
+    .dimension-input {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      min-width: 0 !important;
+      width: auto !important;
+    }
+    
+    .dimension-input label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #666;
+      text-transform: capitalize;
+    }
+    
+    /* Ensure the wrapper and input inside don't have a minimum size */
+    .dimension-input-wrapper {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      min-width: 0 !important;
+      width: 100% !important;
+    }
+    
+    .dimension-input-wrapper input {
+      flex: 1 !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      padding: 12px 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      background: white;
+      height: 40px;
+    }
+    
+    .dimension-input-wrapper input:focus {
+      outline: none;
+      border-color: #436b93;
+      box-shadow: 0 0 0 3px rgba(67,107,147,0.1);
+    }
+    
+    .dimension-input-wrapper .unit {
+      flex-shrink: 0 !important;
+      white-space: nowrap !important;
+      font-size: 13px;
+      color: #999;
+      width: auto;
+      text-align: center;
+    }
+    
+    /* Explicit styling for length, width, height inputs */
+    .dim-length,
+    .dim-width,
+    .dim-height {
+      flex: 1 !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      padding: 12px 10px !important;
+      border: 1px solid #ddd !important;
+      border-radius: 4px !important;
+      font-size: 14px !important;
+      background: white !important;
+      height: 40px !important;
+    }
+    
+    .dim-length:focus,
+    .dim-width:focus,
+    .dim-height:focus {
+      outline: none !important;
+      border-color: #436b93 !important;
+      box-shadow: 0 0 0 3px rgba(67,107,147,0.1) !important;
+    }
+    
+    .weight-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    
+    .weight-input {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+    
+    .weight-input label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #666;
+    }
+    
+    .weight-input input {
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      background: white;
+      width: 100%;
+      height: 40px;
+    }
+    
+    .weight-input input:focus {
+      outline: none;
+      border-color: #436b93;
+      box-shadow: 0 0 0 3px rgba(67,107,147,0.1);
+    }
+    
+    .weight-unit {
+      font-size: 13px;
+      color: #999;
+      align-self: flex-end;
+      padding-bottom: 12px;
+    }
+    
+    
+    .help-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #436b93;
+      text-decoration: none;
+      padding: 12px 0;
+      margin-bottom: 16px;
+    }
+    
+    .add-package-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 16px 12px;
+      margin-top: 12px;
+      background: none;
+      border: 2px dashed #e0e0e0;
+      border-radius: 4px;
+      color: #436b93;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    
+    .add-package-btn:hover {
+      border-color: #436b93;
+      background: rgba(67,107,147,0.03);
+    }
+    
+    /* Error Message in Step 1 */
+    .step1-error {
+      display: none;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      background: #ffebee;
+      border: 1px solid #ef5350;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #c62828;
+      line-height: 1.4;
+      width: fit-content;
+      max-width: 100%;
+      height: auto;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .step1-error.show {
+      display: flex;
+    }
+    
+    .error-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      overflow: hidden;
+    }
+    
+    /* Max Units Section */
+    .max-units-wrapper {
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 20px 24px 24px 24px;
+    }
+    
+    .max-units-wrapper.disabled-state {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .max-units-wrapper.error-state {
+      /* Keep gray background, don't change on error */
+    }
+    
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    
+    .checkbox-input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      cursor: pointer;
+      accent-color: #436b93;
+    }
+    
+    .checkbox-input:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    .checkbox-label {
+      flex: 1;
+      font-size: 13px;
+      color: #333;
+      line-height: 1.4;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .max-units-input-row {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .max-units-input-row.show {
+      display: flex;
+    }
+    
+    .max-units-input {
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-size: 13px;
+      background: white;
+      width: 100%;
+    }
+    
+    .max-units-input:focus {
+      outline: none;
+      border-color: #436b93;
+      box-shadow: 0 0 0 2px rgba(67,107,147,0.1);
+    }
+    
+    .max-units-input.error {
+      /* Keep input white/normal, error is shown in message only */
+    }
+    
+    .max-units-input:disabled {
+      background: #f5f5f5;
+      border-color: #ddd;
+      cursor: not-allowed;
+    }
+    
+    .max-units-helper {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+    }
+    
+    /* Error Messages */
+    .error-message {
+      display: none;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      background: #ffebee;
+      border: 1px solid #ef5350;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #c62828;
+      line-height: 1.4;
+      width: fit-content;
+      max-width: 100%;
+      height: auto;
+      box-sizing: border-box;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .error-message.show {
+      display: flex;
+    }
+    
+    .error-message > div:last-child {
+      flex: 1;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    /* Footer */
+    .modal-footer {
+      padding: 0px 24px 24px 24px;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      background: #ffffff;
+    }
+    
+    .btn {
+      padding: 11px 24px;
+      border: none;
+      border-radius: 3px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid #ddd;
+      color: #666;
+    }
+    
+    .btn-secondary:hover {
+      background: #f8f8f8;
+      border-color: #999;
+    }
+    
+    .btn-primary {
+      background: #436b93;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #375b80;
+    }
+    
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    /* Info Box */
+    .info-box {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 12px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: #1565c0;
+      line-height: 1.5;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-container">
+  
+  <!-- Approach Tabs -->
+  <div class="approach-tabs">
+    <button class="approach-tab active" data-approach="1">
+      Approach 1: Disabled State
+    </button>
+    <button class="approach-tab" data-approach="2">
+      Approach 2: Error Validation
+    </button>
+  </div>
+  
+  <!-- APPROACH 1: DISABLED STATE -->
+  <div class="approach-content active" data-approach="1">
+    <div class="container">
+      <div class="modal">
+        <div style="position: relative;">
+          <button class="modal-close">×</button>
+          <div class="modal-header">
+            <div class="modal-icon">📦</div>
+            <div class="modal-title">Add Packing Dimensions</div>
+            <div class="modal-subtitle">Tell us if you can pack the item, and enter its packaged dimensions with weight for the most accurate shipping quote.</div>
+          </div>
+        </div>
+        
+        <div class="modal-body">
+          <!-- STEP 1 -->
+          <div id="step1-approach1">
+            <div class="step-label">Step 1</div>
+            <div class="step-question">Are you able to pack the item yourself?</div>
+            <div class="radio-group">
+              <div class="radio-option">
+                <input type="radio" id="a1-yes" name="can-pack-a1" value="yes">
+                <label for="a1-yes">Yes</label>
+              </div>
+              <div class="radio-option">
+                <input type="radio" id="a1-no" name="can-pack-a1" value="no">
+                <label for="a1-no">No</label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- STEP 2 -->
+          <div class="step-2-content">
+            <div class="step-label">Step 2</div>
+            <div class="step-question">Enter the dimensions of your packed item.</div>
+            <div class="step-2-helper">
+              <a href="#">What counts as an item?</a>
+            </div>
+            
+            <div class="package-section">
+              <div class="package-title">Package 1</div>
+              
+              <div class="dimensions-row">
+                <div class="dimension-input">
+                  <label>Length</label>
+                  <div class="dimension-input-wrapper">
+                    <input type="number" class="dim-length" placeholder="0">
+                    <span class="unit">in</span>
+                  </div>
+                </div>
+                <div class="dimension-input">
+                  <label>Width</label>
+                  <div class="dimension-input-wrapper">
+                    <input type="number" class="dim-width" placeholder="0">
+                    <span class="unit">in</span>
+                  </div>
+                </div>
+                <div class="dimension-input">
+                  <label>Height</label>
+                  <div class="dimension-input-wrapper">
+                    <input type="number" class="dim-height" placeholder="0">
+                    <span class="unit">in</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="weight-row">
+                <div class="weight-input">
+                  <label>Weight</label>
+                  <input type="number" class="dim-weight" placeholder="0">
+                </div>
+                <div class="weight-unit">lbs</div>
+              </div>
+              
+              </div>
+              
+              
+              <button class="add-package-btn">
+                <span>⊕</span>
+                <span>Add Another Package</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- MAX UNITS SECTION -->
+          <div class="max-units-wrapper" id="a1-max-units">
+            <div class="checkbox-row">
+              <input type="checkbox" id="a1-max-units-checkbox" class="checkbox-input">
+              <label for="a1-max-units-checkbox" class="checkbox-label">
+                Specify max items per package (applies only to Calculated Parcel Quotes)
+              </label>
+            </div>
+            
+            <div class="max-units-input-row">
+              <input type="number" id="a1-max-units-input" class="max-units-input" placeholder="e.g., 2">
+              <div class="max-units-helper">Specify how many items fit in one package. We will calculate amount of packages based on quantity of items ordered.</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary" id="a1-submit">Review and Update 7 Listings</button>
+        </div>
+      </div>
+      
+      <div class="info-box">
+        <strong>ℹ️ Approach 1 (Disabled):</strong> When "No" is selected, the Max Items checkbox and input are disabled (greyed out, opacity 0.6, pointer-events none). Max Items is also disabled if:<br>
+        • Package dimensions exceed USPS limits (130" combined length + girth)<br>
+        • Total weight (weight × max units) exceeds 70 lbs<br><br>
+        <strong>USPS Parcel Limits:</strong> Max 70 lbs or 130" combined (Length + 2×[Width + Height])
+      </div>
+    </div>
+  </div>
+  
+  <!-- APPROACH 2: ERROR VALIDATION -->
+  <div class="approach-content" data-approach="2">
+    <div class="container">
+      <div class="modal">
+        <div style="position: relative;">
+          <button class="modal-close">×</button>
+          <div class="modal-header">
+            <div class="modal-icon">📦</div>
+            <div class="modal-title">Add Packing Dimensions</div>
+            <div class="modal-subtitle">Tell us if you can pack the item, and enter its packaged dimensions with weight for the most accurate shipping quote.</div>
+          </div>
+        </div>
+        
+        <div class="modal-body">
+          <!-- STEP 1 -->
+          <div id="step1-approach2">
+            <div class="step-label">Step 1</div>
+            <div class="step-question">Are you able to pack the item yourself?</div>
+            <div class="radio-group">
+              <div class="radio-option">
+                <input type="radio" id="a2-yes" name="can-pack-a2" value="yes">
+                <label for="a2-yes">Yes</label>
+              </div>
+              <div class="radio-option">
+                <input type="radio" id="a2-no" name="can-pack-a2" value="no">
+                <label for="a2-no">No</label>
+              </div>
+            </div>
+            
+            <div class="step1-error" id="a2-step1-error">
+              <div class="error-icon">⚠</div>
+              <div>You've specified Max Items per Package, but cannot do so when "No" is selected. Either click "Yes" to packing or clear the Max Items field.</div>
+            </div>
+          </div>
+          
+          <!-- STEP 2 -->
+          <div class="step-2-content">
+            <div class="step-label">Step 2</div>
+            <div class="step-question">Enter the dimensions of your packed item.</div>
+            <div class="step-2-helper">
+              <a href="#">What counts as an item?</a>
+            </div>
+            
+            <div class="package-section">
+              <div class="package-title">Package 1</div>
+              
+              <div class="dimensions-row">
+                <div class="dimension-input">
+                  <label>Length</label>
+                  <div class="dimension-input-wrapper">
+                    <input type="number" class="dim-length" placeholder="0">
+                    <span class="unit">in</span>
+                  </div>
+                </div>
+                <div class="dimension-input">
+                  <label>Width</label>
+                  <div class="dimension-input-wrapper">
+                    <input type="number" class="dim-width" placeholder="0">
+                    <span class="unit">in</span>
+                  </div>
+                </div>
+                <div class="dimension-input">
+                  <label>Height</label>
+                  <div class="dimension-input-wrapper">
+                    <input type="number" class="dim-height" placeholder="0">
+                    <span class="unit">in</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="weight-row">
+                <div class="weight-input">
+                  <label>Weight</label>
+                  <input type="number" class="dim-weight" placeholder="0">
+                </div>
+                <div class="weight-unit">lbs</div>
+              </div>
+              
+              </div>
+              
+              
+              <button class="add-package-btn">
+                <span>⊕</span>
+                <span>Add Another Package</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- MAX UNITS SECTION -->
+          <div class="max-units-wrapper" id="a2-max-units">
+            <div class="checkbox-row">
+              <input type="checkbox" id="a2-max-units-checkbox" class="checkbox-input">
+              <label for="a2-max-units-checkbox" class="checkbox-label">
+                Specify max items per package (applies only to Calculated Parcel Quotes)
+              </label>
+            </div>
+            
+            <div class="max-units-input-row">
+              <input type="number" id="a2-max-units-input" class="max-units-input" placeholder="e.g., 2">
+              <div class="max-units-helper">Specify how many items fit in one package. We will calculate amount of packages based on quantity of items ordered.</div>
+            </div>
+            
+            <div class="error-message" id="a2-max-units-error">
+              <div class="error-icon">✕</div>
+              <div>Max Items Per Package cannot be specified when "No" is selected for packing.</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary" id="a2-submit">Review and Update 7 Listings</button>
+        </div>
+      </div>
+      
+      <div class="info-box">
+        <strong>ℹ️ Approach 2 (Error):</strong> When "No" is selected and Max Items is filled, errors appear both in Step 1 and in the Max Items section. Submit button is disabled until fixed. Errors also trigger if:<br>
+        • Package dimensions exceed USPS limits (130" combined length + girth)<br>
+        • Total weight (weight × max units) exceeds 70 lbs<br><br>
+        <strong>USPS Parcel Limits:</strong> Max 70 lbs or 130" combined (Length + 2×[Width + Height])
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+<script>
+  // ========== APPROACH 1: DISABLED STATE ==========
+  const a1Radio = document.querySelectorAll('input[name="can-pack-a1"]');
+  const a1MaxUnitsSection = document.getElementById('a1-max-units');
+  const a1Checkbox = document.getElementById('a1-max-units-checkbox');
+  const a1Input = document.getElementById('a1-max-units-input');
+  const a1InputRow = a1Input.closest('.max-units-input-row');
+  const a1Submit = document.getElementById('a1-submit');
+  
+  function validateApproach1() {
+    const canPack = document.querySelector('input[name="can-pack-a1"]:checked').value;
+    const maxUnitsValue = a1Input.value ? parseInt(a1Input.value) : 0;
+    
+    // Get dimension inputs from Approach 1 section only
+    const a1Content = document.querySelector('.approach-content[data-approach="1"]');
+    const a1LengthInput = a1Content.querySelector('.dimensions-row .dim-length');
+    const a1WidthInput = a1Content.querySelector('.dimensions-row .dim-width');
+    const a1HeightInput = a1Content.querySelector('.dimensions-row .dim-height');
+    const a1WeightInput = a1Content.querySelector('.weight-row .dim-weight');
+    
+    const lengthVal = a1LengthInput ? (a1LengthInput.value ? parseFloat(a1LengthInput.value) : 0) : 0;
+    const widthVal = a1WidthInput ? (a1WidthInput.value ? parseFloat(a1WidthInput.value) : 0) : 0;
+    const heightVal = a1HeightInput ? (a1HeightInput.value ? parseFloat(a1HeightInput.value) : 0) : 0;
+    const weightVal = a1WeightInput ? (a1WeightInput.value ? parseFloat(a1WeightInput.value) : 0) : 0;
+    
+    // Check if dimensions are partially filled (some but not all)
+    const dimFieldsFilled = [lengthVal > 0, widthVal > 0, heightVal > 0, weightVal > 0];
+    const filledCount = dimFieldsFilled.filter(Boolean).length;
+    const allDimsFilled = filledCount === 4;
+    const partialDimsFilled = filledCount > 0 && filledCount < 4;
+    
+    // Get or create error message element in package section
+    let dimErrorMsg = a1Content.querySelector('.package-section .dims-error-message');
+    if (!dimErrorMsg) {
+      dimErrorMsg = document.createElement('div');
+      dimErrorMsg.className = 'error-message dims-error-message';
+      dimErrorMsg.style.marginTop = '12px';
+      a1Content.querySelector('.package-section').appendChild(dimErrorMsg);
+    }
+    
+    // Show error if dimensions are partially filled
+    if (partialDimsFilled) {
+      dimErrorMsg.innerHTML = '<div class="error-icon">✕</div><div>All dimension fields are required. Please fill Length, Width, Height, and Weight.</div>';
+      dimErrorMsg.classList.add('show');
+    } else {
+      dimErrorMsg.classList.remove('show');
+    }
+    
+    // Calculate combined size: Length + 2(Width + Height)
+    const girth = 2 * (widthVal + heightVal);
+    const combinedSize = lengthVal + girth;
+    
+    // USPS Parcel Limits
+    const USPS_GA_MAX_SIZE = 130; // inches
+    const MAX_WEIGHT = 70; // lbs
+    
+    const dimsExceedParcelLimits = allDimsFilled && combinedSize > USPS_GA_MAX_SIZE;
+    
+    // Check if weight alone exceeds 70 lbs OR total weight (weight × max units) exceeds 70 lbs
+    const packageWeightExceedsLimit = weightVal > MAX_WEIGHT;
+    const totalWeight = weightVal * maxUnitsValue;
+    const totalWeightExceedsLimit = maxUnitsValue > 1 && weightVal > 0 && totalWeight > MAX_WEIGHT;
+    const weightExceedsLimit = packageWeightExceedsLimit || totalWeightExceedsLimit;
+    
+    // Check if Max Units is already specified by user (only > 1 counts as "specified")
+    const maxUnitsIsSpecified = maxUnitsValue > 1;
+    
+    // Get or create error message element for max units
+    let maxUnitsErrorMsg = a1Content.querySelector('.max-units-wrapper .max-units-error-message');
+    if (!maxUnitsErrorMsg) {
+      maxUnitsErrorMsg = document.createElement('div');
+      maxUnitsErrorMsg.className = 'error-message max-units-error-message';
+      a1Content.querySelector('.max-units-wrapper').appendChild(maxUnitsErrorMsg);
+    }
+    
+    // Check all error conditions independently to show multiple errors
+    const error1_cantPack = canPack === 'no';
+    const error2_dimsExceedParcel = dimsExceedParcelLimits;
+    const error3_packageWeightExceeds = packageWeightExceedsLimit;
+    const error4_totalWeightExceeds = totalWeightExceedsLimit;
+    
+    // Build error messages - can show multiple errors at once
+    let errorMessages = [];
+    let shouldDisableMaxUnits = false;
+    
+    // Check each condition independently
+    // Conditions 1 and 2: Always disable when these conditions are true, show error only if max units specified
+    if (error1_cantPack) {
+      shouldDisableMaxUnits = true;
+      if (maxUnitsIsSpecified) {
+        errorMessages.push("Max Items Per Package cannot be applied because items must be packaged by the seller to qualify.");
+      }
+    }
+    
+    if (error2_dimsExceedParcel) {
+      shouldDisableMaxUnits = true;
+      if (maxUnitsIsSpecified) {
+        errorMessages.push("Package dimensions exceed USPS parcel limits. Max Items Per Package is not available for oversize packages.");
+      }
+    }
+    
+    // Condition 3: Always disable and show error if package weight alone exceeds
+    if (error3_packageWeightExceeds) {
+      shouldDisableMaxUnits = true;
+      if (maxUnitsIsSpecified) {
+        errorMessages.push(`Total weight exceeds 70 lb parcel limit (${weightVal.toFixed(1)} lbs × ${maxUnitsValue} units = ${totalWeight.toFixed(1)} lbs).`);
+      }
+    } else if (error4_totalWeightExceeds && maxUnitsIsSpecified) {
+      // Condition 4: Only show error if max units calculation exceeds, don't disable
+      errorMessages.push(`Total weight exceeds 70 lb parcel limit (${weightVal.toFixed(1)} lbs × ${maxUnitsValue} units = ${totalWeight.toFixed(1)} lbs).`);
+    }
+    
+    // Show/hide error message
+    if (errorMessages.length > 0) {
+      maxUnitsErrorMsg.innerHTML = `<div class="error-icon">✕</div><div>${errorMessages.join('<br>')}</div>`;
+      maxUnitsErrorMsg.classList.add('show');
+    } else {
+      maxUnitsErrorMsg.classList.remove('show');
+    }
+    
+    // Apply disabled state and disable inputs if needed
+    if (shouldDisableMaxUnits) {
+      a1MaxUnitsSection.classList.add('disabled-state');
+      a1Checkbox.disabled = true;
+      a1Input.disabled = true;
+    } else {
+      a1MaxUnitsSection.classList.remove('disabled-state');
+      a1Checkbox.disabled = false;
+      a1Input.disabled = false;
+    }
+  }
+  
+  a1Radio.forEach(radio => {
+    radio.addEventListener('change', validateApproach1);
+  });
+  
+  // Add listeners for dimension changes in Approach 1
+  const a1DimsContent = document.querySelector('.approach-content[data-approach="1"]');
+  if (a1DimsContent) {
+    const a1DimInputs = a1DimsContent.querySelectorAll('.dim-length, .dim-width, .dim-height, .dim-weight');
+    a1DimInputs.forEach(input => {
+      input.addEventListener('input', function() {
+        validateApproach1();
+      });
+    });
+  }
+  
+  // Toggle input row visibility on checkbox and validate
+  a1Checkbox.addEventListener('change', function() {
+    if (this.checked) {
+      a1InputRow.classList.add('show');
+    } else {
+      a1InputRow.classList.remove('show');
+    }
+    validateApproach1();
+  });
+  
+  // Validate when max units input changes
+  a1Input.addEventListener('input', validateApproach1);
+  
+  // ========== APPROACH 2: ERROR VALIDATION ==========
+  const a2Radio = document.querySelectorAll('input[name="can-pack-a2"]');
+  const a2MaxUnitsSection = document.getElementById('a2-max-units');
+  const a2Checkbox = document.getElementById('a2-max-units-checkbox');
+  const a2Input = document.getElementById('a2-max-units-input');
+  const a2InputRow = a2Input.closest('.max-units-input-row');
+  const a2Step1Error = document.getElementById('a2-step1-error');
+  const a2MaxUnitsError = document.getElementById('a2-max-units-error');
+  const a2Submit = document.getElementById('a2-submit');
+  
+  function validateApproach2() {
+    const canPack = document.querySelector('input[name="can-pack-a2"]:checked').value;
+    const maxUnitsValue = a2Input.value ? parseInt(a2Input.value) : 0;
+    
+    // Get dimension inputs from Approach 2 section only
+    const a2Content = document.querySelector('.approach-content[data-approach="2"]');
+    const a2LengthInput = a2Content.querySelector('.dimensions-row .dim-length');
+    const a2WidthInput = a2Content.querySelector('.dimensions-row .dim-width');
+    const a2HeightInput = a2Content.querySelector('.dimensions-row .dim-height');
+    const a2WeightInput = a2Content.querySelector('.weight-row .dim-weight');
+    
+    const lengthVal = a2LengthInput ? (a2LengthInput.value ? parseFloat(a2LengthInput.value) : 0) : 0;
+    const widthVal = a2WidthInput ? (a2WidthInput.value ? parseFloat(a2WidthInput.value) : 0) : 0;
+    const heightVal = a2HeightInput ? (a2HeightInput.value ? parseFloat(a2HeightInput.value) : 0) : 0;
+    const weightVal = a2WeightInput ? (a2WeightInput.value ? parseFloat(a2WeightInput.value) : 0) : 0;
+    
+    // Check if dimensions are partially filled (some but not all)
+    const dimFieldsFilled = [lengthVal > 0, widthVal > 0, heightVal > 0, weightVal > 0];
+    const filledCount = dimFieldsFilled.filter(Boolean).length;
+    const allDimsFilled = filledCount === 4;
+    const partialDimsFilled = filledCount > 0 && filledCount < 4;
+    const dimsEmpty = lengthVal === 0 && widthVal === 0 && heightVal === 0 && weightVal === 0;
+    
+    // Calculate combined size early: Length + 2(Width + Height)
+    const girth = 2 * (widthVal + heightVal);
+    const combinedSize = lengthVal + girth;
+    
+    // USPS Parcel Limits
+    const USPS_GA_MAX_SIZE = 130; // inches
+    
+    // Check if max units is being used (checkbox checked or value filled)
+    const maxUnitsBeingUsed = a2Checkbox.checked || maxUnitsValue > 0;
+    
+    // Calculate if dims exceed parcel limits early
+    const dimsExceedParcelLimits = allDimsFilled && combinedSize > USPS_GA_MAX_SIZE;
+    
+    // Check for partial dimension fill error
+    let dimErrorMsg = a2Content.querySelector('.package-section .dims-error-message');
+    if (!dimErrorMsg) {
+      dimErrorMsg = document.createElement('div');
+      dimErrorMsg.className = 'error-message dims-error-message';
+      a2Content.querySelector('.package-section').appendChild(dimErrorMsg);
+    }
+    
+    // Show partial dims error
+    if (partialDimsFilled) {
+      dimErrorMsg.innerHTML = '<div class="error-icon">✕</div><div>All dimension fields are required. Please fill Length, Width, Height, and Weight.</div>';
+      dimErrorMsg.classList.add('show');
+    } 
+    // Show dims exceed parcel error if user has Max Units specified
+    else if (dimsExceedParcelLimits && maxUnitsBeingUsed) {
+      dimErrorMsg.innerHTML = '<div class="error-icon">✕</div><div>Max Items Per Package requires parcel dimensions.</div>';
+      dimErrorMsg.classList.add('show');
+    }
+    else {
+      dimErrorMsg.classList.remove('show');
+    }
+    
+    // USPS Parcel Limits
+    const MAX_WEIGHT = 70; // lbs
+    
+    // Check if total weight (weight × max units) exceeds 70 lbs
+    const totalWeight = weightVal * maxUnitsValue;
+    const weightExceedsLimit = maxUnitsBeingUsed && maxUnitsValue > 1 && weightVal > 0 && totalWeight > MAX_WEIGHT;
+    
+    // Check all error conditions independently to show multiple errors
+    const error_partialDims = partialDimsFilled;
+    const error_cantPack = canPack === 'no' && maxUnitsBeingUsed;
+    const error_dimsExceedParcel = dimsExceedParcelLimits && maxUnitsBeingUsed;
+    const error_weightExceeds = weightExceedsLimit;
+    
+    // Errors that disable max units
+    const shouldDisableMaxUnits = error_cantPack || error_dimsExceedParcel;
+    
+    // Any error present
+    const shouldError = error_partialDims || error_cantPack || error_dimsExceedParcel || error_weightExceeds;
+    
+    if (shouldError) {
+      a2Submit.disabled = true;
+      
+      // Build error messages - only show in Max Units section
+      let maxUnitsMessages = [];
+      
+      // Check each error independently to show all applicable errors
+      if (error_cantPack) {
+        maxUnitsMessages.push("Max Items Per Package requires 'Yes' to packing ability.");
+      }
+      
+      if (error_dimsExceedParcel) {
+        maxUnitsMessages.push("Package dimensions exceed USPS parcel limits (130\" combined length and girth).");
+      }
+      
+      if (error_weightExceeds) {
+        maxUnitsMessages.push(`Total weight exceeds 70 lb parcel limit (${weightVal.toFixed(1)} lbs × ${maxUnitsValue} units = ${totalWeight.toFixed(1)} lbs).`);
+      }
+      
+      // Always hide Step 1 error - errors only show in Max Units section
+      a2Step1Error.classList.remove('show');
+      
+      // Show Max Units error if there are max units messages
+      if (maxUnitsMessages.length > 0) {
+        a2MaxUnitsError.classList.add('show');
+        a2MaxUnitsError.innerHTML = `<div class="error-icon">✕</div><div>${maxUnitsMessages.join('<br>')}</div>`;
+      } else {
+        a2MaxUnitsError.classList.remove('show');
+      }
+      
+      // Handle disabling for errors that disable max units
+      if (shouldDisableMaxUnits) {
+        a2MaxUnitsSection.classList.add('error-state');
+        a2Input.classList.add('error');
+      } else {
+        a2MaxUnitsSection.classList.remove('error-state');
+        a2Input.classList.remove('error');
+      }
+    } else {
+      a2MaxUnitsSection.classList.remove('error-state');
+      a2Input.classList.remove('error');
+      a2Step1Error.classList.remove('show');
+      a2MaxUnitsError.classList.remove('show');
+      a2Submit.disabled = false;
+    }
+  }
+  
+  // Real-time validation for Approach 2 - all errors show as user interacts
+  const a2DimsContent = document.querySelector('.approach-content[data-approach="2"]');
+  if (a2DimsContent) {
+    // Validate on dimension input changes
+    const a2DimInputs = a2DimsContent.querySelectorAll('.dim-length, .dim-width, .dim-height, .dim-weight');
+    a2DimInputs.forEach(input => {
+      input.addEventListener('input', function() {
+        validateApproach2();
+      });
+    });
+    
+    // Validate on can-pack radio changes
+    const a2Radios = a2DimsContent.querySelectorAll('input[name="can-pack-a2"]');
+    a2Radios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        validateApproach2();
+      });
+    });
+    
+    // Validate on max units checkbox change
+    if (a2Checkbox) {
+      a2Checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          a2InputRow.classList.add('show');
+        } else {
+          a2InputRow.classList.remove('show');
+        }
+        validateApproach2();
+      });
+    }
+    
+    // Validate on max units input change
+    if (a2Input) {
+      a2Input.addEventListener('input', function() {
+        validateApproach2();
+      });
+    }
+  }
+  
+  // Also validate on Review button click (for safety)
+  a2Submit.addEventListener('click', function(e) {
+    validateApproach2();
+  });
+  
+  // ========== DISABLE SCROLL-WHEEL ON NUMBER INPUTS ==========
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('wheel', function(e) {
+      e.preventDefault();
+    });
+  });
+  
+  // ========== TAB SWITCHING ==========
+  document.querySelectorAll('.approach-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      const approach = this.dataset.approach;
+      
+      // Update active tab
+      document.querySelectorAll('.approach-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Update active content
+      document.querySelectorAll('.approach-content').forEach(c => c.classList.remove('active'));
+      document.querySelector(`.approach-content[data-approach="${approach}"]`).classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
