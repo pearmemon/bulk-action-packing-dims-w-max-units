@@ -924,34 +924,26 @@
     const error3_packageWeightExceeds = packageWeightExceedsLimit;
     const error4_totalWeightExceeds = totalWeightExceedsLimit;
     
-    // Build error messages - can show multiple errors at once
+    // Build error messages - only show error if max units calculation exceeds
     let errorMessages = [];
     let shouldDisableMaxUnits = false;
     
-    // Check each condition independently
-    // Conditions 1 and 2: Always disable when these conditions are true, show error only if max units specified
+    // Condition 1: Can't pack - disable without error message
     if (error1_cantPack) {
       shouldDisableMaxUnits = true;
-      if (maxUnitsIsSpecified) {
-        errorMessages.push("Max Items Per Package cannot be applied because items must be packaged by the seller to qualify.");
-      }
     }
     
+    // Condition 2: Dims exceed parcel - disable without error message
     if (error2_dimsExceedParcel) {
       shouldDisableMaxUnits = true;
-      if (maxUnitsIsSpecified) {
-        errorMessages.push("Package dimensions exceed USPS parcel limits. Max Items Per Package is not available for oversize packages.");
-      }
     }
     
-    // Condition 3: Always disable and show error if package weight alone exceeds
+    // Condition 3: Package weight alone exceeds - disable without error message
     if (error3_packageWeightExceeds) {
       shouldDisableMaxUnits = true;
-      if (maxUnitsIsSpecified) {
-        errorMessages.push(`Total weight exceeds 70 lb parcel limit (${weightVal.toFixed(1)} lbs × ${maxUnitsValue} units = ${totalWeight.toFixed(1)} lbs).`);
-      }
-    } else if (error4_totalWeightExceeds && maxUnitsIsSpecified) {
-      // Condition 4: Only show error if max units calculation exceeds, don't disable
+    } 
+    // Condition 4: Only max units calculation exceeds (dims ARE parcel compliant) - show error, keep active
+    else if (error4_totalWeightExceeds && maxUnitsIsSpecified) {
       errorMessages.push(`Total weight exceeds 70 lb parcel limit (${weightVal.toFixed(1)} lbs × ${maxUnitsValue} units = ${totalWeight.toFixed(1)} lbs).`);
     }
     
@@ -1074,67 +1066,64 @@
     // USPS Parcel Limits
     const MAX_WEIGHT = 70; // lbs
     
+    // Check if weight alone exceeds 70 lbs
+    const packageWeightExceedsLimit = weightVal > MAX_WEIGHT;
+    
     // Check if total weight (weight × max units) exceeds 70 lbs
     const totalWeight = weightVal * maxUnitsValue;
-    const weightExceedsLimit = maxUnitsBeingUsed && maxUnitsValue > 1 && weightVal > 0 && totalWeight > MAX_WEIGHT;
+    const totalWeightExceedsLimit = maxUnitsBeingUsed && maxUnitsValue > 1 && weightVal > 0 && totalWeight > MAX_WEIGHT;
     
     // Check all error conditions independently to show multiple errors
     const error_partialDims = partialDimsFilled;
     const error_cantPack = canPack === 'no' && maxUnitsBeingUsed;
     const error_dimsExceedParcel = dimsExceedParcelLimits && maxUnitsBeingUsed;
-    const error_weightExceeds = weightExceedsLimit;
+    const error_packageWeightExceeds = packageWeightExceedsLimit && maxUnitsBeingUsed;
+    const error_totalWeightExceeds = totalWeightExceedsLimit;
     
     // Errors that disable max units
     const shouldDisableMaxUnits = error_cantPack || error_dimsExceedParcel;
     
     // Any error present
-    const shouldError = error_partialDims || error_cantPack || error_dimsExceedParcel || error_weightExceeds;
+    const shouldError = error_partialDims || error_cantPack || error_dimsExceedParcel || error_packageWeightExceeds || error_totalWeightExceeds;
     
+    // Build error messages - only show in Max Units section
+    let maxUnitsMessages = [];
+    
+    // Check each error independently to show all applicable errors
+    if (error_cantPack) {
+      maxUnitsMessages.push("Max Items Per Package requires 'Yes' to packing ability.");
+    }
+    
+    if (error_dimsExceedParcel) {
+      maxUnitsMessages.push("Package dimensions exceed USPS parcel limits (130\" combined length and girth).");
+    }
+    
+    if (error_packageWeightExceeds) {
+      maxUnitsMessages.push(`Total weight exceeds 70 lb parcel limit (${weightVal.toFixed(1)} lbs).`);
+    } else if (error_totalWeightExceeds) {
+      maxUnitsMessages.push(`Total weight exceeds 70 lb parcel limit (${weightVal.toFixed(1)} lbs × ${maxUnitsValue} units = ${totalWeight.toFixed(1)} lbs).`);
+    }
+    
+    // Always hide Step 1 error - errors only show in Max Units section
+    a2Step1Error.classList.remove('show');
+    
+    // Show Max Units error if there are max units messages
+    if (maxUnitsMessages.length > 0) {
+      a2MaxUnitsError.classList.add('show');
+      a2MaxUnitsError.innerHTML = `<div class="error-icon">✕</div><div>${maxUnitsMessages.join('<br>')}</div>`;
+    } else {
+      a2MaxUnitsError.classList.remove('show');
+    }
+    
+    // Handle error state for Max Units section (visual indication only, not disabled)
     if (shouldError) {
-      a2Submit.disabled = true;
-      
-      // Build error messages - only show in Max Units section
-      let maxUnitsMessages = [];
-      
-      // Check each error independently to show all applicable errors
-      if (error_cantPack) {
-        maxUnitsMessages.push("Max Items Per Package requires 'Yes' to packing ability.");
-      }
-      
-      if (error_dimsExceedParcel) {
-        maxUnitsMessages.push("Package dimensions exceed USPS parcel limits (130\" combined length and girth).");
-      }
-      
-      if (error_weightExceeds) {
-        maxUnitsMessages.push(`Total weight exceeds 70 lb parcel limit (${weightVal.toFixed(1)} lbs × ${maxUnitsValue} units = ${totalWeight.toFixed(1)} lbs).`);
-      }
-      
-      // Always hide Step 1 error - errors only show in Max Units section
-      a2Step1Error.classList.remove('show');
-      
-      // Show Max Units error if there are max units messages
-      if (maxUnitsMessages.length > 0) {
-        a2MaxUnitsError.classList.add('show');
-        a2MaxUnitsError.innerHTML = `<div class="error-icon">✕</div><div>${maxUnitsMessages.join('<br>')}</div>`;
-      } else {
-        a2MaxUnitsError.classList.remove('show');
-      }
-      
-      // Handle disabling for errors that disable max units
-      if (shouldDisableMaxUnits) {
-        a2MaxUnitsSection.classList.add('error-state');
-        a2Input.classList.add('error');
-      } else {
-        a2MaxUnitsSection.classList.remove('error-state');
-        a2Input.classList.remove('error');
-      }
+      a2MaxUnitsSection.classList.add('error-state');
     } else {
       a2MaxUnitsSection.classList.remove('error-state');
-      a2Input.classList.remove('error');
-      a2Step1Error.classList.remove('show');
-      a2MaxUnitsError.classList.remove('show');
-      a2Submit.disabled = false;
     }
+    
+    // Review button is always active - never disabled
+    a2Submit.disabled = false;
   }
   
   // Real-time validation for Approach 2 - all errors show as user interacts
